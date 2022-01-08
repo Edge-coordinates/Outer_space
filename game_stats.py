@@ -6,6 +6,7 @@ class GameStats():
         self.ai_settings = ai_settings
         self.rest_stats()
         self.game_active = False
+        self.game_continue = 0
         self.high_score = 0 # 任何情况下都不应重置最高分
         
     def rest_stats(self):

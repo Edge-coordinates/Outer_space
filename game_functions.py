@@ -1,3 +1,4 @@
+from os import stat
 import sys
 import pygame
 from time import sleep
@@ -6,7 +7,7 @@ from bullet import Bullet
 from enemy import Ghost1
 
 
-def check_keydown_events(event, ai_settings, stats, sb, play_button, screen, ship, enemies, bullets):
+def check_keydown_events(event, ai_settings, stats, sb, play_button, screen, ship, enemies, bullets, fo):
     """响应按键"""
     if event.key == pygame.K_RIGHT:
         ship.moving_right = True  # 向右移动飞船
@@ -15,9 +16,17 @@ def check_keydown_events(event, ai_settings, stats, sb, play_button, screen, shi
     elif event.key == pygame.K_SPACE:
         fire_bullet(ai_settings, stats, screen, ship, bullets)
     elif event.key == pygame.K_p:
-        mouse_x, mouse_y = pygame.mouse.get_pos()
         check_play_button(ai_settings, stats, sb, play_button, screen, ship, enemies, bullets, 1, 0, 0)
+    elif event.key == pygame.K_ESCAPE:
+        stats.game_active = 0
+        stats.game_continue = 1
+        pygame.mouse.set_visible(True)
+    elif event.key == pygame.K_c:
+        stats.game_active = 1
+        stats.game_continue = 0
+        pygame.mouse.set_visible(False)
     elif event.key == pygame.K_q:
+        update_files(stats, fo)
         sys.exit()
 
 
@@ -29,22 +38,30 @@ def check_keyup_events(event, ship):
         ship.moving_left = False  # 停止向左移动飞船
 
 
-def check_events(ai_settings, screen, stats, sb, play_button, ship, enemies, bullets):
+def check_events(ai_settings, screen, stats, sb, continue_button, play_button, ship, enemies, bullets, fo):
     """响应鼠标事件和点击"""
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT:    
+            update_files(stats, fo)
             sys.exit()
         elif event.type == pygame.KEYDOWN:
-            check_keydown_events(event, ai_settings, stats, sb, play_button, screen, ship, enemies, bullets)
+            check_keydown_events(event, ai_settings, stats, sb, play_button, screen, ship, enemies, bullets, fo)
         elif event.type == pygame.KEYUP:
             check_keyup_events(event, ship)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
             check_play_button(ai_settings, stats, sb, play_button, screen, ship, enemies, bullets, 0, mouse_x, mouse_y)
+            check_continue_button(continue_button, stats, mouse_x, mouse_y)
             
+def check_continue_button(continue_button, stats, mouse_x, mouse_y):            
+    if(continue_button.rect.collidepoint(mouse_x, mouse_y) and stats.game_continue == True):
+        stats.game_active = 1
+        stats.game_continue = 0
+        pygame.mouse.set_visible(False)
+
 def check_play_button(ai_settings, stats, sb, play_button, screen, ship, enemies, bullets, flag, mouse_x, mouse_y):
     """Start the game when the player click the play button"""
-    if (play_button.rect.collidepoint(mouse_x, mouse_y) and stats.game_active == False) or flag:
+    if play_button.rect.collidepoint(mouse_x, mouse_y) and stats.game_active == False and stats.game_continue == False or flag:
         # Hide cursor
         pygame.mouse.set_visible(False)
 
@@ -188,20 +205,31 @@ def check_high_score(stats, sb):
         stats.high_score = stats.score
         sb.prep_high_score()
 
-def update_screen(ai_settings, screen, stats, sb, ship, ghosts, bullets, play_button):
+def update_files(stats, fo):
+    # content = fo.read()
+    # print(content)
+    # stats.high_score = max(stats.high_score, content)
+    fo.write(str(stats.high_score) + "\n")
+    fo.close()
+
+def update_screen(ai_settings, screen, stats, sb, ship, ghosts, bullets, play_button, continue_button):
     """更新屏幕上的图像，并切换到新屏幕"""
     # 每次循环重新绘制屏幕
     screen.fill(ai_settings.bg_color)
+    # 显示的分
+    sb.show_score()
     ship.blitme()
     ghosts.draw(screen)
     # 在飞船和Enemy后面绘制所有子弹
     for bullet in bullets.sprites():
         bullet.draw_bullet()
-    # 显示的分
-    sb.show_score()
+    
     # Draw the button if it is inactive show the play button
     if not stats.game_active:
-        play_button.draw_button()
+        if stats.game_continue:
+            continue_button.draw_button()
+        else:
+            play_button.draw_button()
 
     # 让最近绘制的屏幕可见
     pygame.display.flip()

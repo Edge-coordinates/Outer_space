@@ -5,6 +5,8 @@ class Settings():
 
     def __init__(self):
         """初始化游戏设置"""
+        # 获取屏幕分辨率
+
         # 屏幕设置
         self.screen_width = 1200
         self.screen_height = 800
@@ -25,7 +27,7 @@ class Settings():
         self.fleet_direction = 1
 
         # 以什么样的速度加快游戏节奏
-        self.speedup_scale = 1.1
+        self.speedup_scale = 1.5
         self.score_scale = 1.5
 
         self.initialize_dynamic_settings()
